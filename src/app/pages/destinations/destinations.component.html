@@ -1,0 +1,973 @@
+<!-- src/app/pages/destinations/destinations.component.html - Clean Design -->
+
+<!-- Header Section -->
+<section class="bg-white py-16">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+          Destinations in Morocco
+        </h1>
+        <p class="text-lg text-gray-600 mb-8">
+          From ancient monuments to pristine beaches, explore Morocco's most captivating places
+        </p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Filters Section -->
+  <section class="bg-gray-50 border-t border-gray-200">
+    <div class="container mx-auto px-4 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
+        <!-- Search -->
+        <div class="lg:col-span-2">
+          <div class="relative">
+            <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input 
+              type="text" 
+              placeholder="Search destinations..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchChange()">
+          </div>
+        </div>
+        
+        <!-- City Filter -->
+        <div>
+          <p-dropdown 
+            [options]="cityOptions()"
+            placeholder="All Cities"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedCityId"
+            (ngModelChange)="onFilterChange()"
+            [showClear]="true"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Type Filter -->
+        <div>
+          <p-dropdown 
+            [options]="typeOptions"
+            placeholder="All Types"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedType"
+            (ngModelChange)="onFilterChange()"
+            [showClear]="true"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Sort -->
+        <div>
+          <p-dropdown 
+            [options]="sortOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedSort"
+            (ngModelChange)="onFilterChange()"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Advanced Filters Toggle -->
+        <div class="flex items-center">
+          <button
+            class="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+            (click)="showAdvancedFilters.set(!showAdvancedFilters())">
+            {{ showAdvancedFilters() ? 'Hide Filters' : 'More Filters' }}
+            <i [class]="showAdvancedFilters() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+          </button>
+        </div>
+      </div>
+  
+      <!-- Advanced Filters -->
+      @if (showAdvancedFilters()) {
+        <div class="mt-6 pt-6 border-t border-gray-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Price Range -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Price Range: {{ priceRange()[0] }} - {{ priceRange()[1] }} MAD
+              </label>
+              <p-slider 
+                [(ngModel)]="priceRange"
+                [range]="true"
+                [min]="0"
+                [max]="500"
+                [step]="10"
+                (onSlideEnd)="onFilterChange()">
+              </p-slider>
+            </div>
+            
+            <!-- Rating Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Min Rating: {{ minRating() }} stars
+              </label>
+              <p-slider 
+                [(ngModel)]="minRating"
+                [min]="0"
+                [max]="5"
+                [step]="0.5"
+                (onSlideEnd)="onFilterChange()">
+              </p-slider>
+            </div>
+            
+            <!-- Tags Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+              <p-multiSelect 
+                [options]="availableTags()"
+                [(ngModel)]="selectedTags"
+                placeholder="Select tags"
+                (ngModelChange)="onFilterChange()"
+                [maxSelectedLabels]="2"
+                styleClass="w-full">
+              </p-multiSelect>
+            </div>
+            
+            <!-- Free Only -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Options</label>
+              <p-toggleButton 
+                [onLabel]="'Free Only'" 
+                offLabel="All Prices"
+                [onIcon]="'pi pi-check'"
+                offIcon="pi pi-times"
+                [(ngModel)]="freeOnly"
+                (ngModelChange)="onFilterChange()">
+              </p-toggleButton>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+  
+  <!-- Results Section -->
+  <section class="py-8 bg-white min-h-screen">
+    <div class="container mx-auto px-4">
+      
+      <!-- Results Header -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div class="flex-1">
+          @if (!loading()) {
+            <h2 class="text-2xl font-semibold text-gray-900">
+              @if (totalDestinations() > 0) {
+                {{ totalDestinations() }} Destination{{ totalDestinations() !== 1 ? 's' : '' }}
+              } @else {
+                No Destinations Found
+              }
+            </h2>
+            @if (hasActiveFilters()) {
+              <p class="text-gray-600 mt-1 text-sm">{{ getFilterSummary() }}</p>
+            }
+          }
+        </div>
+        
+        @if (!loading() && destinations().length > 0) {
+          <div class="mt-4 sm:mt-0 flex items-center gap-4">
+            <span class="text-sm text-gray-600">
+              Showing {{ (currentPage() * pageSize()) + 1 }}-{{ Math.min((currentPage() + 1) * pageSize(), totalDestinations()) }} of {{ totalDestinations() }}
+            </span>
+          </div>
+        }
+      </div>
+  
+      <!-- Loading State -->
+      @if (loading()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (item of skeletonItems; track item) {
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <p-skeleton width="100%" height="200px"></p-skeleton>
+              <div class="p-6">
+                <p-skeleton width="80%" height="24px" class="mb-3"></p-skeleton>
+                <p-skeleton width="100%" height="16px" class="mb-2"></p-skeleton>
+                <p-skeleton width="60%" height="32px"></p-skeleton>
+              </div>
+            </div>
+          }
+        </div>
+      }
+  
+      <!-- Destinations Grid -->
+      @if (!loading() && destinations().length > 0) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (destination of destinations(); track destination.id) {
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-orange-300 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+                 (click)="navigateToDestination(destination.id)">
+              
+              <!-- Destination Image -->
+              <div class="h-48 bg-gray-100 relative overflow-hidden">
+                @if (getDestinationImage(destination)) {
+                  <img 
+                    [src]="getDestinationImage(destination)" 
+                    [alt]="destination.name"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                } @else {
+                  <div class="w-full h-full bg-orange-50 flex items-center justify-center">
+                    <i class="pi pi-image text-3xl text-orange-300"></i>
+                  </div>
+                }
+                
+                <!-- Type Badge -->
+                <div class="absolute top-3 right-3">
+                  <span class="bg-white/90 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+                    {{ destination.type }}
+                  </span>
+                </div>
+              </div>
+  
+              <!-- Destination Info -->
+              <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
+                  {{ destination.name }}
+                </h3>
+                
+                <!-- Rating -->
+                @if (destination.averageRating && destination.averageRating > 0) {
+                  <div class="flex items-center gap-2 mb-3">
+                    <p-rating 
+                      [(ngModel)]="destination.averageRating"
+                      [readonly]="true" 
+                      [stars]="5"
+                      styleClass="text-sm">
+                    </p-rating>
+                    <span class="text-sm text-gray-600">({{ destination.reviewCount }})</span>
+                  </div>
+                }
+                
+                <!-- Description -->
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {{ destination.description }}
+                </p>
+                
+                <!-- Footer -->
+                <div class="flex items-center justify-between">
+                  @if (destination.entryFee && destination.entryFee > 0) {
+                    <span class="text-lg font-semibold text-orange-600">{{ destination.entryFee }} MAD</span>
+                  } @else {
+                    <span class="text-lg font-semibold text-green-600">Free</span>
+                  }
+                  
+                  <span class="text-sm text-gray-500">{{ destination.cityName }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+  
+      <!-- Empty State -->
+      @if (!loading() && destinations().length === 0) {
+        <div class="text-center py-16">
+          <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="pi pi-compass text-2xl text-gray-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">No destinations found</h3>
+          <p class="text-gray-600 mb-6 max-w-md mx-auto">
+            @if (hasActiveFilters()) {
+              We couldn't find any destinations matching your current filters. Try adjusting your search criteria.
+            } @else {
+              No destinations are available at the moment. Please check back later!
+            }
+          </p>
+          
+          @if (hasActiveFilters()) {
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <button 
+                class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                (click)="clearAllFilters()">
+                Clear All Filters
+              </button>
+              <button 
+                class="border border-orange-500 text-orange-500 hover:bg-orange-50 px-6 py-3 rounded-lg font-semibold transition-colors"
+                routerLink="/cities">
+                Browse Cities
+              </button>
+            </div>
+          } @else {
+            <button 
+              class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              routerLink="/cities">
+              Browse Cities Instead
+            </button>
+          }
+        </div>
+      }
+  
+      <!-- Pagination -->
+      @if (!loading() && destinations().length > 0 && totalDestinations() > pageSize()) {
+        <div class="flex justify-center mt-12">
+          <p-paginator 
+            [first]="currentPage() * pageSize()"
+            [rows]="pageSize()"
+            [totalRecords]="totalDestinations()"
+            [rowsPerPageOptions]="[12, 24, 48]"
+            (onPageChange)="onPageChange($event)">
+          </p-paginator>
+        </div>
+      }
+    </div>
+  </section>
+  
+  <!-- Filters Section -->
+  <section class="bg-white shadow-sm border-b">
+    <div class="container mx-auto px-4 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
+        <!-- Search -->
+        <div class="lg:col-span-2">
+          <div class="relative">
+            <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input 
+              type="text" 
+              placeholder="Search destinations..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchChange()">
+          </div>
+        </div>
+        
+        <!-- City Filter -->
+        <div>
+          <p-dropdown 
+            [options]="cityOptions()"
+            placeholder="All Cities"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedCityId"
+            (ngModelChange)="onFilterChange()"
+            [showClear]="true"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Type Filter -->
+        <div>
+          <p-dropdown 
+            [options]="typeOptions"
+            placeholder="All Types"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedType"
+            (ngModelChange)="onFilterChange()"
+            [showClear]="true"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Sort -->
+        <div>
+          <p-dropdown 
+            [options]="sortOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="selectedSort"
+            (ngModelChange)="onFilterChange()"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        
+        <!-- Advanced Filters Toggle -->
+        <div class="flex items-center">
+          <p-button 
+            [label]="showAdvancedFilters() ? 'Hide Filters' : 'More Filters'"
+            [icon]="showAdvancedFilters() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+            [text]="true"
+            severity="secondary"
+            (onClick)="showAdvancedFilters.set(!showAdvancedFilters())">
+          </p-button>
+        </div>
+      </div>
+  
+      <!-- Advanced Filters -->
+      @if (showAdvancedFilters()) {
+        <div class="mt-6 pt-6 border-t border-gray-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Price Range -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Price Range: {{ priceRange()[0] }} - {{ priceRange()[1] }} MAD
+              </label>
+              <p-slider 
+                [(ngModel)]="priceRange"
+                [range]="true"
+                [min]="0"
+                [max]="500"
+                [step]="10"
+                (onSlideEnd)="onFilterChange()">
+              </p-slider>
+            </div>
+            
+            <!-- Rating Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Min Rating: {{ minRating() }} stars
+              </label>
+              <p-slider 
+                [(ngModel)]="minRating"
+                [min]="0"
+                [max]="5"
+                [step]="0.5"
+                (onSlideEnd)="onFilterChange()">
+              </p-slider>
+            </div>
+            
+            <!-- Tags Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+              <p-multiSelect 
+                [options]="availableTags()"
+                [(ngModel)]="selectedTags"
+                placeholder="Select tags"
+                (ngModelChange)="onFilterChange()"
+                [maxSelectedLabels]="2"
+                styleClass="w-full">
+              </p-multiSelect>
+            </div>
+            
+            <!-- Free Only -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Options</label>
+              <p-toggleButton 
+                [onLabel]="'Free Only'"
+                offLabel="All Prices"
+                [onIcon]="'pi pi-check'"
+                offIcon="pi pi-times"
+                [(ngModel)]="freeOnly"
+                (ngModelChange)="onFilterChange()">
+              </p-toggleButton>
+            </div>
+          </div>
+  
+          <!-- Quick Filter Presets -->
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Filters:</h4>
+            <div class="flex flex-wrap gap-2">
+              <p-button 
+                label="Free Destinations"
+                icon="pi pi-money-bill"
+                size="small"
+                [outlined]="true"
+                severity="success"
+                (onClick)="applyQuickFilter('free')">
+              </p-button>
+              <p-button 
+                label="Highly Rated"
+                icon="pi pi-star"
+                size="small"
+                [outlined]="true"
+                severity="warn"
+                (onClick)="applyQuickFilter('highly-rated')">
+              </p-button>
+              <p-button 
+                label="Historical Sites"
+                icon="pi pi-building"
+                size="small"
+                [outlined]="true"
+                severity="info"
+                (onClick)="applyQuickFilter('historical')">
+              </p-button>
+              <p-button 
+                label="Natural Beauty"
+                icon="pi pi-sun"
+                size="small"
+                [outlined]="true"
+                severity="success"
+                (onClick)="applyQuickFilter('natural')">
+              </p-button>
+              <p-button 
+                label="Budget Friendly"
+                icon="pi pi-wallet"
+                size="small"
+                [outlined]="true"
+                severity="secondary"
+                (onClick)="applyQuickFilter('budget')">
+              </p-button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+  
+  <!-- Results Section -->
+  <section class="py-8 bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4">
+      
+      <!-- Results Header -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div class="flex-1">
+          @if (!loading()) {
+            <h2 class="text-2xl font-bold text-gray-900">
+              @if (totalDestinations() > 0) {
+                {{ totalDestinations() }} Destination{{ totalDestinations() !== 1 ? 's' : '' }} Found
+              } @else {
+                No Destinations Found
+              }
+            </h2>
+            @if (hasActiveFilters()) {
+              <p class="text-gray-600 mt-1 text-sm">{{ getFilterSummary() }}</p>
+            }
+          }
+        </div>
+        
+        @if (!loading() && destinations().length > 0) {
+          <div class="mt-4 sm:mt-0 flex items-center gap-4">
+            <span class="text-sm text-gray-600">
+              Showing {{ (currentPage() * pageSize()) + 1 }}-{{ Math.min((currentPage() + 1) * pageSize(), totalDestinations()) }} of {{ totalDestinations() }}
+            </span>
+            <div class="flex gap-2">
+              <p-button 
+                icon="pi pi-share-alt"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Share search"
+                (onClick)="shareCurrentSearch()">
+              </p-button>
+              <p-button 
+                icon="pi pi-bookmark"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Save search"
+                (onClick)="saveSearchAsFavorite()">
+              </p-button>
+              <p-button 
+                icon="pi pi-download"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Export results"
+                (onClick)="exportResults()">
+              </p-button>
+            </div>
+          </div>
+        }
+      </div>
+  
+      <!-- Loading State -->
+      @if (loading()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          @for (item of skeletonItems; track item) {
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+              <p-skeleton width="100%" height="200px"></p-skeleton>
+              <div class="p-4">
+                <p-skeleton width="80%" height="20px" class="mb-3"></p-skeleton>
+                <p-skeleton width="100%" height="16px" class="mb-2"></p-skeleton>
+                <p-skeleton width="60%" height="16px" class="mb-4"></p-skeleton>
+                <div class="flex justify-between items-center">
+                  <p-skeleton width="100px" height="20px"></p-skeleton>
+                  <p-skeleton width="80px" height="32px"></p-skeleton>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+  
+      <!-- Destinations Grid -->
+      @if (!loading() && destinations().length > 0) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          @for (destination of destinations(); track destination.id) {
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group"
+                 (click)="navigateToDestination(destination.id)">
+              
+              <!-- Destination Image -->
+              <div class="relative h-48 bg-gray-200 overflow-hidden">
+                @if (getDestinationImage(destination)) {
+                  <img 
+                    [src]="getDestinationImage(destination)" 
+                    [alt]="destination.name"
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                } @else {
+                  <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                    <i class="pi pi-image text-4xl text-white opacity-60"></i>
+                  </div>
+                }
+                
+                <!-- Type Badge -->
+                <div class="absolute top-3 right-3">
+                  <p-tag 
+                    [value]="destination.type"
+                    [severity]="getTypeSeverity(destination.type)"
+                    [rounded]="true">
+                  </p-tag>
+                </div>
+  
+                <!-- Quick Actions Overlay -->
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div class="flex gap-2">
+                    <p-button 
+                      icon="pi pi-eye"
+                      [rounded]="true"
+                      severity="info"
+                      size="small"
+                      pTooltip="Quick view">
+                    </p-button>
+                    <p-button 
+                      icon="pi pi-heart"
+                      [rounded]="true"
+                      severity="danger"
+                      size="small"
+                      pTooltip="Add to favorites">
+                    </p-button>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Destination Info -->
+              <div class="p-4">
+                <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+                  {{ destination.name }}
+                </h3>
+                
+                <!-- Rating and Reviews -->
+                @if (destination.averageRating && destination.averageRating > 0) {
+                  <div class="flex items-center gap-2 mb-3">
+                    <p-rating 
+                      [(ngModel)]="destination.averageRating"
+                      [readonly]="true" 
+                      [stars]="5"
+                      styleClass="text-sm">
+                    </p-rating>
+                    <span class="text-sm font-medium">{{ destination.averageRating | number:'1.1-1' }}</span>
+                    <span class="text-xs text-gray-500">({{ destination.reviewCount }})</span>
+                  </div>
+                }
+                
+                <!-- Price -->
+                @if (destination.entryFee && destination.entryFee > 0) {
+                  <div class="flex items-center gap-2 mb-3">
+                    <i class="pi pi-money-bill text-green-500"></i>
+                    <span class="text-lg font-bold text-green-600">{{ destination.entryFee }} MAD</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-2 mb-3">
+                    <i class="pi pi-check-circle text-green-500"></i>
+                    <span class="text-lg font-bold text-green-600">Free Entry</span>
+                  </div>
+                }
+                
+                <!-- Location -->
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="pi pi-map-marker text-primary-500 text-sm"></i>
+                  <span class="text-sm text-gray-600">{{ destination.cityName }}</span>
+                </div>
+                
+                <!-- Description -->
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {{ destination.description }}
+                </p>
+                
+                <!-- Tags -->
+                @if (destination.tags && destination.tags.length > 0) {
+                  <div class="flex flex-wrap gap-1 mb-4">
+                    @for (tag of destination.tags.slice(0, 3); track tag) {
+                      <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+                        {{ tag }}
+                      </span>
+                    }
+                    @if (destination.tags.length > 3) {
+                      <span class="bg-primary-100 text-primary-700 px-2 py-1 rounded text-xs font-medium">
+                        +{{ destination.tags.length - 3 }} more
+                      </span>
+                    }
+                  </div>
+                }
+                
+                <!-- Action Footer -->
+                <div class="flex items-center justify-between pt-2">
+                  <p-button 
+                    label="Learn More"
+                    icon="pi pi-arrow-right"
+                    [text]="true"
+                    size="small"
+                    styleClass="text-primary-600 hover:text-primary-700 p-0 group-hover:translate-x-1 transition-transform">
+                  </p-button>
+                  
+                  <div class="flex items-center gap-1">
+                    <p-button 
+                      icon="pi pi-share-alt"
+                      [text]="true"
+                      [rounded]="true"
+                      size="small"
+                      severity="secondary"
+                      styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
+                      pTooltip="Share">
+                    </p-button>
+                    <p-button 
+                      icon="pi pi-bookmark"
+                      [text]="true"
+                      [rounded]="true"
+                      size="small"
+                      severity="secondary"
+                      styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
+                      pTooltip="Save">
+                    </p-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+  
+        <!-- Search Performance Insight -->
+        <div class="mt-8 text-center">
+          <div class="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm">
+            <i class="pi pi-info-circle text-blue-500"></i>
+            <span class="text-sm text-gray-600">{{ getSearchInsights() }}</span>
+          </div>
+        </div>
+      }
+  
+      <!-- Empty State -->
+      @if (!loading() && destinations().length === 0) {
+        <div class="text-center py-16">
+          <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="pi pi-compass text-3xl text-gray-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">No destinations found</h3>
+          <p class="text-gray-600 mb-6 max-w-md mx-auto">
+            @if (hasActiveFilters()) {
+              We couldn't find any destinations matching your current filters. Try adjusting your search criteria to discover more amazing places in Morocco.
+            } @else {
+              No destinations are available at the moment. Please check back later for amazing places to explore!
+            }
+          </p>
+          
+          @if (hasActiveFilters()) {
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <p-button 
+                label="Clear All Filters" 
+                icon="pi pi-times"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="clearAllFilters()">
+              </p-button>
+              <p-button 
+                label="Load Last Search" 
+                icon="pi pi-history"
+                severity="info"
+                [outlined]="true"
+                (onClick)="loadLastSearch()">
+              </p-button>
+              <p-button 
+                label="Browse All Cities" 
+                icon="pi pi-map"
+                severity="primary"
+                [outlined]="true"
+                routerLink="/cities">
+              </p-button>
+            </div>
+          } @else {
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <p-button 
+                label="Browse Cities" 
+                icon="pi pi-map"
+                severity="primary"
+                routerLink="/cities">
+              </p-button>
+              <p-button 
+                label="Go Home" 
+                icon="pi pi-home"
+                severity="secondary"
+                [outlined]="true"
+                routerLink="/">
+              </p-button>
+            </div>
+          }
+        </div>
+      }
+  
+      <!-- Pagination -->
+      @if (!loading() && destinations().length > 0 && totalDestinations() > pageSize()) {
+        <div class="flex justify-center mt-12">
+          <div class="bg-white rounded-lg shadow-sm p-4">
+            <p-paginator 
+              [first]="currentPage() * pageSize()"
+              [rows]="pageSize()"
+              [totalRecords]="totalDestinations()"
+              [rowsPerPageOptions]="[12, 24, 48]"
+              (onPageChange)="onPageChange($event)"
+              styleClass="border-none">
+            </p-paginator>
+          </div>
+        </div>
+      }
+  
+      <!-- Results Summary Footer -->
+      @if (!loading() && destinations().length > 0) {
+        <div class="mt-12 pt-8 border-t border-gray-200">
+          <div class="text-center">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              Explore More of Morocco
+            </h3>
+            <div class="flex flex-wrap justify-center gap-3">
+              <p-button 
+                label="View All Cities"
+                icon="pi pi-map"
+                severity="info"
+                [outlined]="true"
+                routerLink="/cities">
+              </p-button>
+              <p-button 
+                label="Popular Destinations"
+                icon="pi pi-star"
+                severity="warn"
+                [outlined]="true"
+                routerLink="/"
+                fragment="popular">
+              </p-button>
+              <p-button 
+                label="Plan Your Trip"
+                icon="pi pi-calendar"
+                severity="success"
+                [outlined]="true">
+              </p-button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+  
+  <!-- Floating Action Buttons for Mobile -->
+  <div class="fixed bottom-6 right-6 z-50 lg:hidden">
+    <div class="flex flex-col gap-3">
+      @if (showAdvancedFilters()) {
+        <p-button 
+          icon="pi pi-times"
+          [rounded]="true"
+          size="large"
+          severity="danger"
+          pTooltip="Close Filters"
+          (onClick)="showAdvancedFilters.set(false)">
+        </p-button>
+      }
+      <p-button 
+        icon="pi pi-filter"
+        [rounded]="true"
+        size="large"
+        severity="primary"
+        pTooltip="Toggle Filters"
+        (onClick)="showAdvancedFilters.set(!showAdvancedFilters())"
+        [badge]="hasActiveFilters() ? '!' : undefined"
+        badgeClass="bg-red-500">
+      </p-button>
+    </div>
+  </div>
+  
+  <!-- Scroll to Top Button -->
+  <div class="fixed bottom-6 left-6 z-50">
+    <p-button 
+      icon="pi pi-chevron-up"
+      [rounded]="true"
+      severity="secondary"
+      pTooltip="Scroll to top"
+      styleClass="opacity-0 transition-opacity duration-300"
+      [class.opacity-100]="destinations().length > 6"
+      (onClick)="scrollToTop()">
+    </p-button>
+  </div>
+  
+  <!-- Loading Overlay for Mobile -->
+  @if (loading()) {
+    <div class="fixed inset-0 bg-black bg-opacity-20 z-40 flex items-center justify-center lg:hidden">
+      <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm mx-4">
+        <div class="flex flex-col items-center gap-4">
+          <div class="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          <div class="text-center">
+            <h4 class="font-semibold text-gray-900">Searching destinations...</h4>
+            <p class="text-sm text-gray-600 mt-1">Finding the best places for you</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+  
+  <!-- Search Tips Modal (Hidden by default, ready for future use) -->
+  <div class="hidden" id="searchTipsModal">
+    <div class="bg-white rounded-lg p-6 max-w-md">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Search Tips</h3>
+        <p-button 
+          icon="pi pi-times"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary">
+        </p-button>
+      </div>
+      <ul class="space-y-3 text-sm text-gray-600">
+        <li class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
+          <span>Use specific keywords like "beach", "mountain", or "historical" to find exactly what you're looking for</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
+          <span>Filter by city to discover hidden gems and local attractions in specific regions</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
+          <span>Use the rating filter to find highly recommended places visited by other travelers</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
+          <span>Toggle "Free Only" to discover amazing destinations with no entry fee required</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
+          <span>Save your favorite searches to quickly access them later and plan your perfect trip</span>
+        </li>
+      </ul>
+      <div class="mt-6 pt-4 border-t border-gray-200">
+        <p class="text-xs text-gray-500 text-center">
+          Discover the magic of Morocco with our smart search tools
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom Navigation Helper (Mobile) -->
+  <div class="lg:hidden bg-white border-t border-gray-200 px-4 py-3">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        @if (destinations().length > 0) {
+          <span class="text-sm font-medium text-gray-900">{{ totalDestinations() }} found</span>
+        } @else if (!loading()) {
+          <span class="text-sm text-gray-500">No results</span>
+        }
+        @if (hasActiveFilters()) {
+          <p-button 
+            icon="pi pi-times"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            pTooltip="Clear filters"
+            (onClick)="clearAllFilters()">
+          </p-button>
+        }
+      </div>
+      
+      <div class="flex items-center gap-2">
+        @if (destinations().length > 0) {
+          <p-button 
+            icon="pi pi-sort-alt"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            pTooltip="Sort options">
+          </p-button>
+          <p-button 
+            icon="pi pi-th-large"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            pTooltip="View options">
+          </p-button>
+        }
+      </div>
+    </div>
+  </div>

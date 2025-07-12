@@ -1,0 +1,338 @@
+<!-- src/app/pages/home/home.component.html -->
+
+<!-- Hero Section -->
+<section class="bg-white py-20">
+  <div class="container mx-auto px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <!-- Logo and Tagline -->
+      <div class="mb-8">
+        <img
+          src="assets/images/logo.svg"
+          alt="Ziyara"
+          class="h-16 mx-auto mb-4"
+        />
+        <h1 class="text-5xl font-bold text-gray-900 mb-6">
+          Discover Morocco's
+          <span class="text-orange-500">Beauty</span>
+        </h1>
+        <p class="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
+          Your trusted guide to Morocco's most captivating destinations. From
+          ancient medinas to pristine beaches, explore authentic experiences
+          curated by locals.
+        </p>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="max-w-lg mx-auto mb-8">
+        <div class="relative">
+          <input
+            type="text"
+            placeholder="Search destinations, cities, or experiences..."
+            class="w-full px-6 py-4 text-lg border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 shadow-sm"
+          />
+          <button
+            class="absolute right-2 top-2 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full transition-colors"
+          >
+            <i class="pi pi-search"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors inline-flex items-center justify-center gap-2"
+          routerLink="/destinations"
+        >
+          <i class="pi pi-compass"></i>
+          Explore Destinations
+        </button>
+        <button
+          class="border border-orange-500 text-orange-500 hover:bg-orange-50 px-8 py-3 rounded-lg font-semibold transition-colors inline-flex items-center justify-center gap-2"
+          routerLink="/cities"
+        >
+          <i class="pi pi-map"></i>
+          Browse Cities
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Section -->
+<section class="bg-orange-50 py-16">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="text-3xl font-bold text-orange-600 mb-2">
+          {{ cities().length }}+
+        </div>
+        <div class="text-gray-600">Cities</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-orange-600 mb-2">
+          {{ popularDestinations().length }}+
+        </div>
+        <div class="text-gray-600">Destinations</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-orange-600 mb-2">1000+</div>
+        <div class="text-gray-600">Reviews</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-orange-600 mb-2">24/7</div>
+        <div class="text-gray-600">Support</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Popular Destinations -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">
+        Popular Destinations
+      </h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        Discover the most loved attractions and experiences across Morocco
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    @if (popularLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+      <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <p-skeleton width="100%" height="200px"></p-skeleton>
+        <div class="p-6">
+          <p-skeleton width="80%" height="24px" class="mb-3"></p-skeleton>
+          <p-skeleton width="100%" height="16px" class="mb-2"></p-skeleton>
+          <p-skeleton width="60%" height="32px"></p-skeleton>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Destinations Grid -->
+    @if (!popularLoading() && popularDestinations().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (destination of popularDestinations(); track destination.id) {
+      <div
+        class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-orange-300 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+        (click)="navigateToDestination(destination.id)"
+      >
+        <!-- Image -->
+        <div class="h-48 bg-gray-100 relative overflow-hidden">
+          @if (getDestinationImage(destination)) {
+          <img
+            [src]="getDestinationImage(destination)"
+            [alt]="destination.name"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          } @else {
+          <div
+            class="w-full h-full bg-orange-50 flex items-center justify-center"
+          >
+            <i class="pi pi-image text-3xl text-orange-300"></i>
+          </div>
+          }
+
+          <!-- Type Badge -->
+          <div class="absolute top-3 right-3">
+            <span
+              class="bg-white/90 text-gray-700 px-2 py-1 rounded text-xs font-medium"
+            >
+              {{ destination.type }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+          <h3
+            class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors"
+          >
+            {{ destination.name }}
+          </h3>
+
+          <!-- Rating -->
+          @if (destination.averageRating && destination.averageRating > 0) {
+          <div class="flex items-center gap-2 mb-3">
+            <p-rating
+              [(ngModel)]="destination.averageRating"
+              [readonly]="true"
+              [stars]="5"
+              styleClass="text-sm"
+            >
+            </p-rating>
+            <span class="text-sm text-gray-600"
+              >({{ destination.reviewCount }})</span
+            >
+          </div>
+          }
+
+          <!-- Price -->
+          <div class="flex items-center justify-between">
+            @if (destination.entryFee && destination.entryFee > 0) {
+            <span class="text-lg font-semibold text-orange-600"
+              >{{ destination.entryFee }} MAD</span
+            >
+            } @else {
+            <span class="text-lg font-semibold text-green-600">Free</span>
+            }
+
+            <span class="text-sm text-gray-500">{{
+              destination.cityName
+            }}</span>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- View All Button -->
+    <div class="text-center mt-8">
+      <button
+        class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+        routerLink="/destinations"
+      >
+        View All Destinations
+      </button>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!popularLoading() && popularDestinations().length === 0) {
+    <div class="text-center py-12">
+      <div
+        class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+      >
+        <i class="pi pi-compass text-xl text-gray-400"></i>
+      </div>
+      <p class="text-gray-600">No destinations available at the moment.</p>
+    </div>
+    }
+  </div>
+</section>
+
+<!-- Featured Cities -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Explore Cities</h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        From imperial cities to coastal gems, discover Morocco's diverse urban
+        treasures
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    @if (citiesLoading()) {
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for (item of [1, 2, 3, 4]; track item) {
+      <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <p-skeleton width="100%" height="160px"></p-skeleton>
+        <div class="p-4">
+          <p-skeleton width="80%" height="20px" class="mb-2"></p-skeleton>
+          <p-skeleton width="60%" height="14px"></p-skeleton>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Cities Grid -->
+    @if (!citiesLoading() && featuredCities().length > 0) {
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for (city of featuredCities(); track city.id) {
+      <div
+        class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-orange-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
+        (click)="navigateToCity(city.id)"
+      >
+        <!-- Image -->
+        <div class="h-32 bg-gray-100 relative overflow-hidden">
+          @if (getCityImage(city)) {
+          <img
+            [src]="getCityImage(city)"
+            [alt]="city.name"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          } @else {
+          <div
+            class="w-full h-full bg-orange-50 flex items-center justify-center"
+          >
+            <i class="pi pi-building text-2xl text-orange-300"></i>
+          </div>
+          }
+        </div>
+
+        <!-- Content -->
+        <div class="p-4">
+          <h3
+            class="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors"
+          >
+            {{ city.name }}
+          </h3>
+          <p class="text-sm text-gray-600">
+            {{ city.destinationCount }} destinations
+          </p>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- View All Button -->
+    <div class="text-center mt-8">
+      <button
+        class="border border-orange-500 text-orange-500 hover:bg-orange-50 px-6 py-3 rounded-lg font-semibold transition-colors"
+        routerLink="/cities"
+      >
+        View All Cities
+      </button>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!citiesLoading() && featuredCities().length === 0) {
+    <div class="text-center py-12">
+      <div
+        class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+      >
+        <i class="pi pi-map text-xl text-gray-400"></i>
+      </div>
+      <p class="text-gray-600">No cities available at the moment.</p>
+    </div>
+    }
+  </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="bg-orange-50 rounded-2xl p-12 text-center max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">
+        Ready to Start Your Journey?
+      </h2>
+      <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+        Join thousands of travelers who have discovered Morocco's hidden gems
+        through Ziyara. Start planning your perfect Moroccan adventure today.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors inline-flex items-center justify-center gap-2"
+          routerLink="/destinations"
+        >
+          <i class="pi pi-compass"></i>
+          Start Exploring
+        </button>
+        <button
+          class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-lg font-semibold transition-colors"
+        >
+          Learn More
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

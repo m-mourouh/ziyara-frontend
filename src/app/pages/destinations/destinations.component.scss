@@ -1,0 +1,47 @@
+:host {
+    display: block;
+  }
+  
+  // Component-specific styles
+  :host ::ng-deep {
+    // Slider customization
+    .p-slider {
+      .p-slider-range {
+        background-color: #3b82f6; // Replace with the actual color value for bg-primary-500
+      }
+      
+      .p-slider-handle {
+        border: 1px solid #3b82f6; /* Replace with the actual color value for border-primary-500 */
+        background-color: #3b82f6; /* Replace with the actual color value for bg-primary-500 */
+      }
+    }
+    
+    // Rating customization
+    .p-rating {
+      .p-rating-item {
+        .p-rating-icon {
+          color: #facc15; /* Replace with the actual hex value for text-yellow-400 */
+          
+          &.p-rating-icon-active {
+            color: #eab308; /* Replace with the actual hex value for text-yellow-500 */
+          }
+        }
+      }
+    }
+    
+    // MultiSelect customization
+    .p-multiselect {
+      .p-multiselect-token {
+        background-color: #dbeafe; /* Replace with the actual color value for bg-primary-100 */
+        color: #1e40af; /* Replace with the actual color value for text-primary-800 */
+      }
+    }
+    
+    // ToggleButton customization
+    .p-togglebutton {
+      &.p-highlight {
+        background-color: #3b82f6; /* Replace with the actual color value for bg-primary-500 */
+        border: 1px solid #3b82f6; /* Replace with the actual color value for border-primary-500 */
+      }
+    }
+  }
